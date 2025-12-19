@@ -335,6 +335,7 @@ class OSD(Ceph):
     def osd_fsid(self) -> Optional[str]:
         return self._osd_fsid
 
+
 @register_daemon_form
 class Crash(Ceph):
     @classmethod
@@ -356,6 +357,7 @@ class Crash(Ceph):
         makedirs(os.path.join(data_dir_base, 'crash', 'posted'), uid, gid,
                  DATA_DIR_MODE)
         return cls(ctx, ident)
+
 
 @register_daemon_form
 class CephExporter(ContainerDaemonForm):
