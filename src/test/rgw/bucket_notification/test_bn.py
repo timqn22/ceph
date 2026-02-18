@@ -9,8 +9,7 @@ import time
 import os
 import io
 import string
-# XXX this should be converted to use boto3
-import boto
+import sys
 from botocore.exceptions import ClientError
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from random import randint
@@ -18,7 +17,6 @@ import hashlib
 # XXX this should be converted to use pytest
 from nose.plugins.attrib import attr
 import boto3
-from boto.s3.connection import S3Connection
 import datetime
 from cloudevents.http import from_http
 from dateutil import parser
@@ -38,11 +36,14 @@ from .api import PSTopicS3, \
     delete_all_objects, \
     delete_all_topics, \
     put_object_tagging, \
-    admin
+    admin, \
+    S3Connection, \
+    S3Bucket, \
+    S3Key, \
+    MultipartUpload
 
 from nose import SkipTest
 from nose.tools import assert_not_equal, assert_equal, assert_in, assert_not_in, assert_true
-import boto.s3.tagging
 
 # configure logging for the tests module
 class LogWrapper:
@@ -513,8 +514,7 @@ def connection():
 
     conn = S3Connection(aws_access_key_id=vstart_access_key,
                   aws_secret_access_key=vstart_secret_key,
-                      is_secure=False, port=port_no, host=hostname,
-                      calling_format='boto.s3.connection.OrdinaryCallingFormat')
+                      is_secure=False, port=port_no, host=hostname)
 
     return conn
 
@@ -527,8 +527,7 @@ def connection2():
 
     conn = S3Connection(aws_access_key_id=vstart_access_key,
                   aws_secret_access_key=vstart_secret_key,
-                      is_secure=False, port=port_no, host=hostname,
-                      calling_format='boto.s3.connection.OrdinaryCallingFormat')
+                      is_secure=False, port=port_no, host=hostname)
 
     return conn
 
@@ -551,8 +550,7 @@ def another_user(user=None, tenant=None, account=None):
 
     conn = S3Connection(aws_access_key_id=access_key,
                   aws_secret_access_key=secret_key,
-                      is_secure=False, port=get_config_port(), host=get_config_host(),
-                      calling_format='boto.s3.connection.OrdinaryCallingFormat')
+                      is_secure=False, port=get_config_port(), host=get_config_host())
     return conn, arn
 
 
@@ -659,8 +657,7 @@ def connect_random_user(tenant=''):
     assert_equal(result, 0)
     conn = S3Connection(aws_access_key_id=access_key,
                         aws_secret_access_key=secret_key,
-                        is_secure=False, port=get_config_port(), host=get_config_host(),
-                        calling_format='boto.s3.connection.OrdinaryCallingFormat')
+                        is_secure=False, port=get_config_port(), host=get_config_host())
     return conn
 
 ##############
@@ -2757,7 +2754,7 @@ def test_ps_s3_versioning_on_master():
     s3_notification_conf.del_config()
     topic_conf.del_config()
     # delete the bucket
-    bucket.delete_key(copy_of_key, version_id=ver3)
+    bucket.delete_key(copy_of_key.name, version_id=ver3)
     bucket.delete_key(key.name, version_id=ver2)
     bucket.delete_key(key.name, version_id=ver1)
     #conn.delete_bucket(bucket_name)
@@ -5720,6 +5717,12 @@ def test_topic_migration_to_an_account():
     """test the topic migration procedure described at
     https://docs.ceph.com/en/latest/radosgw/account/#migrate-an-existing-user-into-an-account
     """
+    # Initialize variables for cleanup in finally block
+    user1_bucket_name = None
+    user2_bucket_name = None
+    user1_id = None
+    account_id = None
+
     try:
         # create an http server for notification delivery
         host = get_ip()
@@ -5919,13 +5922,18 @@ def test_topic_migration_to_an_account():
         )
         log.info("topic migration test has completed successfully")
     finally:
-        admin(["user", "rm", "--uid", user1_id, "--purge-data"], get_config_cluster())
-        admin(
-            ["bucket", "rm", "--bucket", user1_bucket_name, "--purge-data"],
-            get_config_cluster(),
-        )
-        admin(
-            ["bucket", "rm", "--bucket", user2_bucket_name, "--purge-data"],
-            get_config_cluster(),
-        )
-        admin(["account", "rm", "--account-id", account_id], get_config_cluster())
+        if user1_id is not None:
+            admin(["user", "rm", "--uid", user1_id, "--purge-data"], get_config_cluster())
+        if user1_bucket_name is not None:
+            admin(
+                ["bucket", "rm", "--bucket", user1_bucket_name, "--purge-data"],
+                get_config_cluster(),
+            )
+        if user2_bucket_name is not None:
+            admin(
+                ["bucket", "rm", "--bucket", user2_bucket_name, "--purge-data"],
+                get_config_cluster(),
+            )
+        if account_id is not None:
+            admin(["account", "rm", "--account-id", account_id], get_config_cluster())
+
