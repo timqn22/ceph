@@ -1531,7 +1531,7 @@ def test_ps_s3_notification_push_amqp_idleness_check():
     print('waiting for 40sec for checking idleness')
     time.sleep(40)
 
-    os.system("netstat -nnp | grep 5672");
+    os.system("ss -tnp | grep 5672")
 
     # do the process of uploading an object and checking for notification again
     number_of_objects = 10
@@ -1574,7 +1574,7 @@ def test_ps_s3_notification_push_amqp_idleness_check():
     # check amqp receiver 1 for deletions
     receiver1.verify_s3_events(keys, exact_match=True, deletions=True)
 
-    os.system("netstat -nnp | grep 5672");
+    os.system("ss -tnp | grep 5672")
 
     # cleanup
     stop_amqp_receiver(receiver1, task1)
@@ -2969,12 +2969,15 @@ def test_ps_s3_persistent_cleanup():
 
 def check_http_server(http_port):
     str_port = str(http_port)
-    cmd = 'netstat -tlnnp | grep python | grep '+str_port
-    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
-    out = proc.communicate()[0]
-    assert len(out) > 0, 'http python server NOT listening on port '+str_port
-    log.info("http python server listening on port "+str_port)
-    log.info(out.decode('utf-8'))
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        s.settimeout(1)
+        s.connect((get_ip(), http_port))
+        log.info("http server listening on port "+str_port)
+    except (socket.error, socket.timeout):
+        assert False, 'http server NOT listening on port '+str_port
+    finally:
+        s.close()
 
 
 def wait_for_queue_to_drain(topic_name, tenant=None, account=None, http_port=None):
@@ -3503,7 +3506,7 @@ def test_ps_s3_notification_kafka_idle_behaviour():
     while not is_idle:
         print('waiting for 10sec for checking idleness')
         time.sleep(10)
-        cmd = "netstat -nnp | grep 9092 | grep radosgw"
+        cmd = "ss -tnp | grep 9092 | grep radosgw"
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
         out = proc.communicate()[0]
         if len(out) == 0:
