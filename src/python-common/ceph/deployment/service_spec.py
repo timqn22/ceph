@@ -979,6 +979,7 @@ class ServiceSpec(object):
                  ip_addrs: Optional[Dict[str, str]] = None,
                  ssl_ca_cert: Optional[str] = None,
                  termination_grace_period_seconds: Optional[int] = None,
+                 allow_label_remove_service: bool = False,
                  ):
 
         #: See :ref:`orchestrator-cli-placement-spec`.
@@ -1021,6 +1022,13 @@ class ServiceSpec(object):
         #: :ref:`cephadm-rgw-networks` and :ref:`cephadm-mgr-networks`.
         self.networks: List[str] = networks or []
         self.targets: List[str] = targets or []
+
+        #: If set to ``true``, a user can remove all instances of a service
+        #: by applying a service spec where no hosts match the label for
+        #: service placement. A user can also, at run time, remove labels from
+        #: hosts to achieve the same effect. This is helpful, for giving users
+        #: the ability to completely remove a service by using labels.
+        self.allow_label_remove_service = allow_label_remove_service
 
         self.config: Optional[Dict[str, str]] = None
         if config:
@@ -1187,6 +1195,8 @@ class ServiceSpec(object):
             ret['unmanaged'] = self.unmanaged
         if self.networks:
             ret['networks'] = self.networks
+        if self.allow_label_remove_service:
+            ret['allow_label_remove_service'] = self.allow_label_remove_service
         if self.extra_container_args:
             ret['extra_container_args'] = ArgumentSpec.map_json(
                 self.extra_container_args
@@ -1380,6 +1390,7 @@ class NFSServiceSpec(ServiceSpec):
                  tls_debug: bool = False,
                  tls_min_version: Optional[str] = None,
                  tls_ciphers: Optional[str] = None,
+                 allow_label_remove_service: bool = False,
                  ):
         assert service_type == 'nfs'
         super(NFSServiceSpec, self).__init__(
@@ -1388,7 +1399,8 @@ class NFSServiceSpec(ServiceSpec):
             config=config, networks=networks, extra_container_args=extra_container_args,
             extra_entrypoint_args=extra_entrypoint_args, custom_configs=custom_configs,
             ip_addrs=ip_addrs, ssl=ssl, ssl_cert=ssl_cert, ssl_key=ssl_key, ssl_ca_cert=ssl_ca_cert,
-            certificate_source=certificate_source, custom_sans=custom_sans)
+            certificate_source=certificate_source, custom_sans=custom_sans,
+            allow_label_remove_service=allow_label_remove_service)
 
         self.port = port
 
@@ -1521,6 +1533,7 @@ class RGWSpec(ServiceSpec):
                  rgw_exit_timeout_secs: int = 120,
                  qat: Optional[Dict[str, str]] = None,
                  d3n_cache: Optional[Dict[str, Any]] = None,
+                 allow_label_remove_service: bool = False,
                  ):
         assert service_type == 'rgw', service_type
 
@@ -1538,7 +1551,7 @@ class RGWSpec(ServiceSpec):
             placement=placement, unmanaged=unmanaged,
             preview_only=preview_only, config=config, networks=networks,
             extra_container_args=extra_container_args, extra_entrypoint_args=extra_entrypoint_args,
-            custom_configs=custom_configs)
+            custom_configs=custom_configs, allow_label_remove_service=allow_label_remove_service)
 
         #: The RGW realm associated with this service. Needs to be manually created
         #: if the spec is being applied directly to cephdam. In case of rgw module
@@ -1796,6 +1809,7 @@ class NvmeofServiceSpec(ServiceSpec):
                  extra_container_args: Optional[GeneralArgList] = None,
                  extra_entrypoint_args: Optional[GeneralArgList] = None,
                  custom_configs: Optional[List[CustomConfig]] = None,
+                 allow_label_remove_service: bool = False,
                  ):
         assert service_type == 'nvmeof'
         super(NvmeofServiceSpec, self).__init__('nvmeof', service_id=service_id,
@@ -1809,7 +1823,8 @@ class NvmeofServiceSpec(ServiceSpec):
                                                 config=config, networks=networks,
                                                 extra_container_args=extra_container_args,
                                                 extra_entrypoint_args=extra_entrypoint_args,
-                                                custom_configs=custom_configs)
+                                                custom_configs=custom_configs,
+                                                allow_label_remove_service=allow_label_remove_service)
 
         #: RADOS pool where ceph-nvmeof config data is stored (use '.nvmeof' as default).
         self.pool = pool or '.nvmeof'
@@ -2211,6 +2226,7 @@ class IscsiServiceSpec(ServiceSpec):
                  extra_container_args: Optional[GeneralArgList] = None,
                  extra_entrypoint_args: Optional[GeneralArgList] = None,
                  custom_configs: Optional[List[CustomConfig]] = None,
+                 allow_label_remove_service: bool = False,
                  ):
         assert service_type == 'iscsi'
         super(IscsiServiceSpec, self).__init__('iscsi', service_id=service_id,
@@ -2224,7 +2240,8 @@ class IscsiServiceSpec(ServiceSpec):
                                                config=config, networks=networks,
                                                extra_container_args=extra_container_args,
                                                extra_entrypoint_args=extra_entrypoint_args,
-                                               custom_configs=custom_configs)
+                                               custom_configs=custom_configs,
+                                               allow_label_remove_service=allow_label_remove_service)
 
         #: RADOS pool where ceph-iscsi config data is stored.
         self.pool = pool
@@ -2309,6 +2326,7 @@ class IngressSpec(ServiceSpec):
                  monitor_networks: Optional[List[str]] = None,
                  monitor_ip_addrs: Optional[Dict[str, str]] = None,
                  use_tcp_mode_over_rgw: bool = False,
+                 allow_label_remove_service: bool = False,
                  ):
         assert service_type == 'ingress'
 
@@ -2323,7 +2341,8 @@ class IngressSpec(ServiceSpec):
             custom_sans=custom_sans,
             extra_container_args=extra_container_args,
             extra_entrypoint_args=extra_entrypoint_args,
-            custom_configs=custom_configs
+            custom_configs=custom_configs,
+            allow_label_remove_service=allow_label_remove_service
         )
         self.backend_service = backend_service
         self.frontend_port = frontend_port
@@ -2438,6 +2457,7 @@ class MgmtGatewaySpec(ServiceSpec):
                  extra_container_args: Optional[GeneralArgList] = None,
                  extra_entrypoint_args: Optional[GeneralArgList] = None,
                  custom_configs: Optional[List[CustomConfig]] = None,
+                 allow_label_remove_service: bool = False,
                  ):
         assert service_type == 'mgmt-gateway'
 
@@ -2453,7 +2473,8 @@ class MgmtGatewaySpec(ServiceSpec):
             preview_only=preview_only,
             extra_container_args=extra_container_args,
             extra_entrypoint_args=extra_entrypoint_args,
-            custom_configs=custom_configs
+            custom_configs=custom_configs,
+            allow_label_remove_service=allow_label_remove_service
         )
         #: Flag to enable or disable HTTPS. By default set to True.
         self.ssl = ssl
@@ -2574,6 +2595,7 @@ class OAuth2ProxySpec(ServiceSpec):
                  extra_container_args: Optional[GeneralArgList] = None,
                  extra_entrypoint_args: Optional[GeneralArgList] = None,
                  custom_configs: Optional[List[CustomConfig]] = None,
+                 allow_label_remove_service: bool = False,
                  ):
         assert service_type == 'oauth2-proxy'
 
@@ -2588,7 +2610,8 @@ class OAuth2ProxySpec(ServiceSpec):
             custom_sans=custom_sans,
             extra_container_args=extra_container_args,
             extra_entrypoint_args=extra_entrypoint_args,
-            custom_configs=custom_configs
+            custom_configs=custom_configs,
+            allow_label_remove_service=allow_label_remove_service
         )
         #: The address for HTTPS connections, formatted as 'host:port'.
         self.https_address = https_address
@@ -2806,6 +2829,7 @@ class CustomContainerSpec(ServiceSpec):
                  extra_entrypoint_args: Optional[GeneralArgList] = None,
                  custom_configs: Optional[List[CustomConfig]] = None,
                  init_containers: Optional[List[Union['InitContainerSpec', Dict[str, Any]]]] = None,
+                 allow_label_remove_service: bool = False,
                  ):
         assert service_type == 'container'
         assert service_id is not None
@@ -2817,7 +2841,8 @@ class CustomContainerSpec(ServiceSpec):
             preview_only=preview_only, config=config,
             networks=networks, extra_container_args=extra_container_args,
             extra_entrypoint_args=extra_entrypoint_args,
-            custom_configs=custom_configs)
+            custom_configs=custom_configs,
+            allow_label_remove_service=allow_label_remove_service)
 
         self.image = image
         self.entrypoint = entrypoint
@@ -2897,6 +2922,7 @@ class MonitoringSpec(ServiceSpec):
                  extra_container_args: Optional[GeneralArgList] = None,
                  extra_entrypoint_args: Optional[GeneralArgList] = None,
                  custom_configs: Optional[List[CustomConfig]] = None,
+                 allow_label_remove_service: bool = False,
                  ):
         assert service_type in ['grafana', 'node-exporter', 'prometheus', 'alertmanager',
                                 'loki', 'alloy', 'promtail']
@@ -2908,7 +2934,8 @@ class MonitoringSpec(ServiceSpec):
             preview_only=preview_only, config=config,
             networks=networks, extra_container_args=extra_container_args,
             extra_entrypoint_args=extra_entrypoint_args,
-            custom_configs=custom_configs, targets=targets)
+            custom_configs=custom_configs, targets=targets,
+            allow_label_remove_service=allow_label_remove_service)
 
         self.service_type = service_type
         self.port = port
@@ -2950,6 +2977,7 @@ class AlertManagerSpec(MonitoringSpec):
                  extra_container_args: Optional[GeneralArgList] = None,
                  extra_entrypoint_args: Optional[GeneralArgList] = None,
                  custom_configs: Optional[List[CustomConfig]] = None,
+                 allow_label_remove_service: bool = False,
                  ):
         assert service_type == 'alertmanager'
         super(AlertManagerSpec, self).__init__(
@@ -2958,7 +2986,7 @@ class AlertManagerSpec(MonitoringSpec):
             ssl=ssl, certificate_source=certificate_source,
             preview_only=preview_only, config=config, networks=networks, port=port,
             extra_container_args=extra_container_args, extra_entrypoint_args=extra_entrypoint_args,
-            custom_configs=custom_configs)
+            custom_configs=custom_configs, allow_label_remove_service=allow_label_remove_service)
 
         # Custom configuration.
         #
@@ -3011,6 +3039,7 @@ class GrafanaSpec(MonitoringSpec):
                  extra_container_args: Optional[GeneralArgList] = None,
                  extra_entrypoint_args: Optional[GeneralArgList] = None,
                  custom_configs: Optional[List[CustomConfig]] = None,
+                 allow_label_remove_service: bool = False,
                  ):
         assert service_type == 'grafana'
         super(GrafanaSpec, self).__init__(
@@ -3019,7 +3048,7 @@ class GrafanaSpec(MonitoringSpec):
             placement=placement, unmanaged=unmanaged,
             preview_only=preview_only, config=config, networks=networks, port=port,
             extra_container_args=extra_container_args, extra_entrypoint_args=extra_entrypoint_args,
-            custom_configs=custom_configs)
+            custom_configs=custom_configs, allow_label_remove_service=allow_label_remove_service)
 
         self.initial_admin_password = initial_admin_password
         self.anonymous_access = anonymous_access
@@ -3084,6 +3113,7 @@ class PrometheusSpec(MonitoringSpec):
                  extra_container_args: Optional[GeneralArgList] = None,
                  extra_entrypoint_args: Optional[GeneralArgList] = None,
                  custom_configs: Optional[List[CustomConfig]] = None,
+                 allow_label_remove_service: bool = False,
                  ):
         assert service_type == 'prometheus'
         super(PrometheusSpec, self).__init__(
@@ -3092,7 +3122,7 @@ class PrometheusSpec(MonitoringSpec):
             ssl=ssl, certificate_source=certificate_source,
             preview_only=preview_only, config=config, networks=networks, port=port, targets=targets,
             extra_container_args=extra_container_args, extra_entrypoint_args=extra_entrypoint_args,
-            custom_configs=custom_configs)
+            custom_configs=custom_configs, allow_label_remove_service=allow_label_remove_service)
 
         self.retention_time = retention_time.strip() if retention_time else None
         self.retention_size = retention_size.strip() if retention_size else None
@@ -3160,6 +3190,7 @@ class SNMPGatewaySpec(ServiceSpec):
                  extra_container_args: Optional[GeneralArgList] = None,
                  extra_entrypoint_args: Optional[GeneralArgList] = None,
                  custom_configs: Optional[List[CustomConfig]] = None,
+                 allow_label_remove_service: bool = False,
                  ):
         assert service_type == 'snmp-gateway'
 
@@ -3170,7 +3201,8 @@ class SNMPGatewaySpec(ServiceSpec):
             preview_only=preview_only,
             extra_container_args=extra_container_args,
             extra_entrypoint_args=extra_entrypoint_args,
-            custom_configs=custom_configs)
+            custom_configs=custom_configs,
+            allow_label_remove_service=allow_label_remove_service)
 
         self.service_type = service_type
         self.snmp_version = snmp_version
@@ -3283,6 +3315,7 @@ class MDSSpec(ServiceSpec):
                  extra_container_args: Optional[GeneralArgList] = None,
                  extra_entrypoint_args: Optional[GeneralArgList] = None,
                  custom_configs: Optional[List[CustomConfig]] = None,
+                 allow_label_remove_service: bool = False,
                  ):
         assert service_type == 'mds'
         super(MDSSpec, self).__init__('mds', service_id=service_id,
@@ -3292,7 +3325,8 @@ class MDSSpec(ServiceSpec):
                                       preview_only=preview_only,
                                       extra_container_args=extra_container_args,
                                       extra_entrypoint_args=extra_entrypoint_args,
-                                      custom_configs=custom_configs)
+                                      custom_configs=custom_configs,
+                                      allow_label_remove_service=allow_label_remove_service)
 
     def validate(self) -> None:
         super(MDSSpec, self).validate()
@@ -3318,6 +3352,7 @@ class MONSpec(ServiceSpec):
                  extra_entrypoint_args: Optional[GeneralArgList] = None,
                  custom_configs: Optional[List[CustomConfig]] = None,
                  crush_locations: Optional[Dict[str, List[str]]] = None,
+                 allow_label_remove_service: bool = False,
                  ):
         assert service_type == 'mon'
         super(MONSpec, self).__init__('mon', service_id=service_id,
@@ -3329,7 +3364,8 @@ class MONSpec(ServiceSpec):
                                       networks=networks,
                                       extra_container_args=extra_container_args,
                                       extra_entrypoint_args=extra_entrypoint_args,
-                                      custom_configs=custom_configs)
+                                      custom_configs=custom_configs,
+                                      allow_label_remove_service=allow_label_remove_service)
 
         self.crush_locations = crush_locations
         self.validate()
@@ -3364,7 +3400,8 @@ class TracingSpec(ServiceSpec):
                  networks: Optional[List[str]] = None,
                  placement: Optional[PlacementSpec] = None,
                  unmanaged: bool = False,
-                 preview_only: bool = False
+                 preview_only: bool = False,
+                 allow_label_remove_service: bool = False,
                  ):
         assert service_type in TracingSpec.SERVICE_TYPES + ['jaeger-tracing']
 
@@ -3372,7 +3409,8 @@ class TracingSpec(ServiceSpec):
             service_type, service_id,
             placement=placement, unmanaged=unmanaged,
             preview_only=preview_only, config=config,
-            networks=networks)
+            networks=networks,
+            allow_label_remove_service=allow_label_remove_service)
         self.without_query = without_query
         self.es_nodes = es_nodes
 
@@ -3405,7 +3443,8 @@ class TracingSpec(ServiceSpec):
                                      unmanaged=self.unmanaged,
                                      config=self.config,
                                      networks=self.networks,
-                                     preview_only=self.preview_only
+                                     preview_only=self.preview_only,
+                                     allow_label_remove_service=self.allow_label_remove_service
                                      ))
         return specs
 
@@ -3480,6 +3519,7 @@ class CephExporterSpec(ServiceSpec):
                  preview_only: bool = False,
                  extra_container_args: Optional[GeneralArgList] = None,
                  extra_entrypoint_args: Optional[GeneralArgList] = None,
+                 allow_label_remove_service: bool = False,
                  ):
         assert service_type == 'ceph-exporter'
 
@@ -3491,7 +3531,8 @@ class CephExporterSpec(ServiceSpec):
             unmanaged=unmanaged,
             preview_only=preview_only,
             extra_container_args=extra_container_args,
-            extra_entrypoint_args=extra_entrypoint_args)
+            extra_entrypoint_args=extra_entrypoint_args,
+            allow_label_remove_service=allow_label_remove_service)
 
         self.service_type = service_type
         self.sock_dir = None
@@ -3834,6 +3875,7 @@ class SMBSpec(ServiceSpec):
         unmanaged: bool = False,
         preview_only: bool = False,
         networks: Optional[List[str]] = None,
+        allow_label_remove_service: bool = False,
         # --- smb specific values ---
         # cluster_id - a name identifying the smb "cluster" this daemon
         # is part of. A cluster may be made up of one or more services
@@ -3914,6 +3956,7 @@ class SMBSpec(ServiceSpec):
             extra_container_args=extra_container_args,
             extra_entrypoint_args=extra_entrypoint_args,
             custom_configs=custom_configs,
+            allow_label_remove_service=allow_label_remove_service
         )
         self.cluster_id = cluster_id
         self.features = features or []
