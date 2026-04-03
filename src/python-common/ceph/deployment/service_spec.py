@@ -1400,7 +1400,8 @@ class NFSServiceSpec(ServiceSpec):
             extra_entrypoint_args=extra_entrypoint_args, custom_configs=custom_configs,
             ip_addrs=ip_addrs, ssl=ssl, ssl_cert=ssl_cert, ssl_key=ssl_key, ssl_ca_cert=ssl_ca_cert,
             certificate_source=certificate_source, custom_sans=custom_sans,
-            allow_label_remove_service=allow_label_remove_service)
+            allow_label_remove_service=allow_label_remove_service
+        )
 
         self.port = port
 
@@ -1551,7 +1552,8 @@ class RGWSpec(ServiceSpec):
             placement=placement, unmanaged=unmanaged,
             preview_only=preview_only, config=config, networks=networks,
             extra_container_args=extra_container_args, extra_entrypoint_args=extra_entrypoint_args,
-            custom_configs=custom_configs, allow_label_remove_service=allow_label_remove_service)
+            custom_configs=custom_configs, allow_label_remove_service=allow_label_remove_service
+        )
 
         #: The RGW realm associated with this service. Needs to be manually created
         #: if the spec is being applied directly to cephdam. In case of rgw module
@@ -1812,19 +1814,21 @@ class NvmeofServiceSpec(ServiceSpec):
                  allow_label_remove_service: bool = False,
                  ):
         assert service_type == 'nvmeof'
-        super(NvmeofServiceSpec, self).__init__('nvmeof', service_id=service_id,
-                                                ssl=ssl,
-                                                certificate_source=certificate_source,
-                                                ssl_cert=ssl_cert,
-                                                ssl_key=ssl_key,
-                                                custom_sans=custom_sans,
-                                                placement=placement, unmanaged=unmanaged,
-                                                preview_only=preview_only,
-                                                config=config, networks=networks,
-                                                extra_container_args=extra_container_args,
-                                                extra_entrypoint_args=extra_entrypoint_args,
-                                                custom_configs=custom_configs,
-                                                allow_label_remove_service=allow_label_remove_service)
+        super(NvmeofServiceSpec, self).__init__(
+            'nvmeof', service_id=service_id,
+            ssl=ssl,
+            certificate_source=certificate_source,
+            ssl_cert=ssl_cert,
+            ssl_key=ssl_key,
+            custom_sans=custom_sans,
+            placement=placement, unmanaged=unmanaged,
+            preview_only=preview_only,
+            config=config, networks=networks,
+            extra_container_args=extra_container_args,
+            extra_entrypoint_args=extra_entrypoint_args,
+            custom_configs=custom_configs,
+            allow_label_remove_service=allow_label_remove_service
+        )
 
         #: RADOS pool where ceph-nvmeof config data is stored (use '.nvmeof' as default).
         self.pool = pool or '.nvmeof'
@@ -2229,19 +2233,21 @@ class IscsiServiceSpec(ServiceSpec):
                  allow_label_remove_service: bool = False,
                  ):
         assert service_type == 'iscsi'
-        super(IscsiServiceSpec, self).__init__('iscsi', service_id=service_id,
-                                               placement=placement, unmanaged=unmanaged,
-                                               ssl=ssl,
-                                               ssl_cert=ssl_cert,
-                                               ssl_key=ssl_key,
-                                               certificate_source=certificate_source,
-                                               custom_sans=custom_sans,
-                                               preview_only=preview_only,
-                                               config=config, networks=networks,
-                                               extra_container_args=extra_container_args,
-                                               extra_entrypoint_args=extra_entrypoint_args,
-                                               custom_configs=custom_configs,
-                                               allow_label_remove_service=allow_label_remove_service)
+        super(IscsiServiceSpec, self).__init__(
+            'iscsi', service_id=service_id,
+            placement=placement, unmanaged=unmanaged,
+            ssl=ssl,
+            ssl_cert=ssl_cert,
+            ssl_key=ssl_key,
+            certificate_source=certificate_source,
+            custom_sans=custom_sans,
+            preview_only=preview_only,
+            config=config, networks=networks,
+            extra_container_args=extra_container_args,
+            extra_entrypoint_args=extra_entrypoint_args,
+            custom_configs=custom_configs,
+            allow_label_remove_service=allow_label_remove_service
+        )
 
         #: RADOS pool where ceph-iscsi config data is stored.
         self.pool = pool
@@ -2842,7 +2848,8 @@ class CustomContainerSpec(ServiceSpec):
             networks=networks, extra_container_args=extra_container_args,
             extra_entrypoint_args=extra_entrypoint_args,
             custom_configs=custom_configs,
-            allow_label_remove_service=allow_label_remove_service)
+            allow_label_remove_service=allow_label_remove_service
+        )
 
         self.image = image
         self.entrypoint = entrypoint
@@ -2935,7 +2942,8 @@ class MonitoringSpec(ServiceSpec):
             networks=networks, extra_container_args=extra_container_args,
             extra_entrypoint_args=extra_entrypoint_args,
             custom_configs=custom_configs, targets=targets,
-            allow_label_remove_service=allow_label_remove_service)
+            allow_label_remove_service=allow_label_remove_service
+        )
 
         self.service_type = service_type
         self.port = port
@@ -2986,7 +2994,8 @@ class AlertManagerSpec(MonitoringSpec):
             ssl=ssl, certificate_source=certificate_source,
             preview_only=preview_only, config=config, networks=networks, port=port,
             extra_container_args=extra_container_args, extra_entrypoint_args=extra_entrypoint_args,
-            custom_configs=custom_configs, allow_label_remove_service=allow_label_remove_service)
+            custom_configs=custom_configs, allow_label_remove_service=allow_label_remove_service
+        )
 
         # Custom configuration.
         #
@@ -3048,7 +3057,8 @@ class GrafanaSpec(MonitoringSpec):
             placement=placement, unmanaged=unmanaged,
             preview_only=preview_only, config=config, networks=networks, port=port,
             extra_container_args=extra_container_args, extra_entrypoint_args=extra_entrypoint_args,
-            custom_configs=custom_configs, allow_label_remove_service=allow_label_remove_service)
+            custom_configs=custom_configs, allow_label_remove_service=allow_label_remove_service
+        )
 
         self.initial_admin_password = initial_admin_password
         self.anonymous_access = anonymous_access
@@ -3122,7 +3132,8 @@ class PrometheusSpec(MonitoringSpec):
             ssl=ssl, certificate_source=certificate_source,
             preview_only=preview_only, config=config, networks=networks, port=port, targets=targets,
             extra_container_args=extra_container_args, extra_entrypoint_args=extra_entrypoint_args,
-            custom_configs=custom_configs, allow_label_remove_service=allow_label_remove_service)
+            custom_configs=custom_configs, allow_label_remove_service=allow_label_remove_service
+        )
 
         self.retention_time = retention_time.strip() if retention_time else None
         self.retention_size = retention_size.strip() if retention_size else None
@@ -3202,7 +3213,8 @@ class SNMPGatewaySpec(ServiceSpec):
             extra_container_args=extra_container_args,
             extra_entrypoint_args=extra_entrypoint_args,
             custom_configs=custom_configs,
-            allow_label_remove_service=allow_label_remove_service)
+            allow_label_remove_service=allow_label_remove_service
+        )
 
         self.service_type = service_type
         self.snmp_version = snmp_version
@@ -3318,15 +3330,17 @@ class MDSSpec(ServiceSpec):
                  allow_label_remove_service: bool = False,
                  ):
         assert service_type == 'mds'
-        super(MDSSpec, self).__init__('mds', service_id=service_id,
-                                      placement=placement,
-                                      config=config,
-                                      unmanaged=unmanaged,
-                                      preview_only=preview_only,
-                                      extra_container_args=extra_container_args,
-                                      extra_entrypoint_args=extra_entrypoint_args,
-                                      custom_configs=custom_configs,
-                                      allow_label_remove_service=allow_label_remove_service)
+        super(MDSSpec, self).__init__(
+            'mds', service_id=service_id,
+            placement=placement,
+            config=config,
+            unmanaged=unmanaged,
+            preview_only=preview_only,
+            extra_container_args=extra_container_args,
+            extra_entrypoint_args=extra_entrypoint_args,
+            custom_configs=custom_configs,
+            allow_label_remove_service=allow_label_remove_service
+        )
 
     def validate(self) -> None:
         super(MDSSpec, self).validate()
@@ -3355,17 +3369,19 @@ class MONSpec(ServiceSpec):
                  allow_label_remove_service: bool = False,
                  ):
         assert service_type == 'mon'
-        super(MONSpec, self).__init__('mon', service_id=service_id,
-                                      placement=placement,
-                                      count=count,
-                                      config=config,
-                                      unmanaged=unmanaged,
-                                      preview_only=preview_only,
-                                      networks=networks,
-                                      extra_container_args=extra_container_args,
-                                      extra_entrypoint_args=extra_entrypoint_args,
-                                      custom_configs=custom_configs,
-                                      allow_label_remove_service=allow_label_remove_service)
+        super(MONSpec, self).__init__(
+            'mon', service_id=service_id,
+            placement=placement,
+            count=count,
+            config=config,
+            unmanaged=unmanaged,
+            preview_only=preview_only,
+            networks=networks,
+            extra_container_args=extra_container_args,
+            extra_entrypoint_args=extra_entrypoint_args,
+            custom_configs=custom_configs,
+            allow_label_remove_service=allow_label_remove_service
+        )
 
         self.crush_locations = crush_locations
         self.validate()
@@ -3410,7 +3426,8 @@ class TracingSpec(ServiceSpec):
             placement=placement, unmanaged=unmanaged,
             preview_only=preview_only, config=config,
             networks=networks,
-            allow_label_remove_service=allow_label_remove_service)
+            allow_label_remove_service=allow_label_remove_service
+        )
         self.without_query = without_query
         self.es_nodes = es_nodes
 
@@ -3532,7 +3549,8 @@ class CephExporterSpec(ServiceSpec):
             preview_only=preview_only,
             extra_container_args=extra_container_args,
             extra_entrypoint_args=extra_entrypoint_args,
-            allow_label_remove_service=allow_label_remove_service)
+            allow_label_remove_service=allow_label_remove_service
+        )
 
         self.service_type = service_type
         self.sock_dir = None
