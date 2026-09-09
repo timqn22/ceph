@@ -709,7 +709,8 @@ Commands
   or has snapshots cannot be removed.
 
 :command:`trash purge schedule add` [-p | --pool *pool*] [--namespace *namespace*] *interval* [*start-time*]
-  Add trash purge schedule.
+  Add trash purge schedule. The ``interval`` can be specified in
+  weeks, days, hours, or minutes using the w, d, h, m suffix respectively.
 
 :command:`trash purge schedule list` [-R | --recursive] [--format *format*] [--pretty-format] [-p | --pool *pool*] [--namespace *namespace*]
   List trash purge schedule.

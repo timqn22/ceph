@@ -265,6 +265,29 @@ class TrashPurgeScheduleHandler:
 
         scheduled = []
         with self.lock:
+            now = datetime.now(timezone.utc)
+            for pool_id, namespaces in self.pools.items():
+                for namespace in namespaces:
+                    if not level_spec.matches(pool_id, namespace):
+                        continue
+                    schedule = self.schedules.find(pool_id, namespace)
+                    if not schedule:
+                        self.log.debug(
+                            "TrashPurgeScheduleHandler: no schedule for {}/{}".format(
+                                pool_id, namespace))
+                        continue
+
+                    schedule_times = schedule.all_runs(now, "{}/{}".format(pool_id, namespace))
+                    pool_name = self.pools[pool_id][namespace]
+                    for schedule_time in schedule_times:
+                        scheduled.append({
+                            'schedule_time': schedule_time.strftime("%Y-%m-%d %H:%M:00"),
+                            'pool_id': pool_id,
+                            'pool_name': pool_name,
+                            'namespace': namespace
+                        })
+        return 0, json.dumps({'scheduled': scheduled}, indent=4, sort_keys=True), ""
+'''
             for schedule_time in sorted(self.queue):
                 for pool_id, namespace in self.queue[schedule_time]:
                     if not level_spec.matches(pool_id, namespace):
@@ -278,3 +301,4 @@ class TrashPurgeScheduleHandler:
                     })
         return 0, json.dumps({'scheduled': scheduled}, indent=4,
                              sort_keys=True), ""
+'''

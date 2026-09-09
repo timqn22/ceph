@@ -241,7 +241,10 @@ class Interval:
         return hash(self.minutes)
 
     def to_string(self) -> str:
-        if self.minutes % (60 * 24) == 0:
+        if self.minutes % (60 * 24 * 7) == 0:
+            interval = int(self.minutes / (60 * 24 * 7))
+            units = 'w'
+        elif self.minutes % (60 * 24) == 0:
             interval = int(self.minutes / (60 * 24))
             units = 'd'
         elif self.minutes % 60 == 0:
@@ -255,11 +258,15 @@ class Interval:
 
     @classmethod
     def from_string(cls, interval: str) -> 'Interval':
-        match = re.match(r'^(\d+)(d|h|m)?$', interval)
+        match = re.match(r'^(\d+)(w|d|h|m)?$', interval)
         if not match:
-            raise ValueError("Invalid interval ({})".format(interval))
+            raise ValueError(
+                "Invalid interval ({}), valid units are w, d, h, m".format(
+                    interval))
 
         minutes = int(match.group(1))
+        if match.group(2) == 'w':
+            minutes *= 60 * 24 * 7
         if match.group(2) == 'd':
             minutes *= 60 * 24
         elif match.group(2) == 'h':
@@ -366,6 +373,32 @@ class Schedule:
 
         return schedule_time
 
+    def all_runs(self, now: datetime, entity_id: str) -> List[datetime]:
+        schedule_times = []
+
+        for interval, start_time in self.items:
+            period = timedelta(minutes=interval.minutes)
+            if start_time:
+                anchor_time = start_time.dt
+            else:
+                phase_offset_minutes = self._compute_phase_offset_minutes(
+                    entity_id, interval.minutes)
+                anchor_time = (
+                    datetime(1970, 1, 1, tzinfo=timezone.utc)
+                    + timedelta(minutes=phase_offset_minutes)
+                )
+
+            if anchor_time > now:
+                schedule_times.append(anchor_time)
+            else:
+                q, r = divmod(now - anchor_time, period)
+                schedule_times.append(anchor_time + (q + bool(r)) * period)
+
+        if not schedule_times:
+            raise ValueError('no items is added')
+
+        return schedule_times
+    
     def to_list(self) -> List[Dict[str, Optional[str]]]:
         return [
             {
